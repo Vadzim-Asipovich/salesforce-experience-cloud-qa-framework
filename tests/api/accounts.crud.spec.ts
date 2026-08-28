@@ -3,11 +3,15 @@ import { buildAccountInput } from '../../src/utils/test-data';
 import { SalesforceApiError } from '../../src/api/clients/salesforce-rest.client';
 
 test.describe('Account sobject — CRUD @api', () => {
-  test('creates, reads, updates and deletes an Account end to end', async ({ sfClient }) => {
+  test('creates, reads, updates and deletes an Account end to end', async ({
+    sfClient,
+    trackedAccountIds,
+  }) => {
     const input = buildAccountInput({ Industry: 'Financial Services' });
 
     const created = await test.step('create', async () => {
       const result = await sfClient.createAccount(input);
+      trackedAccountIds.push(result.id); // safety net if a later step throws
       expect(result.success).toBe(true);
       expect(result.id).toMatch(/^001/);
       return result;

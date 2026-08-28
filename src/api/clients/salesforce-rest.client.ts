@@ -1,4 +1,4 @@
-import { type APIRequestContext } from '@playwright/test';
+import { type APIRequestContext, type APIResponse } from '@playwright/test';
 import { z } from 'zod';
 import { env, apiBaseUrl } from '../../config/env';
 import { JwtAuthProvider } from '../auth/jwt-auth.provider';
@@ -14,6 +14,7 @@ import {
   CreateResultSchema,
   SalesforceErrorResponseSchema,
   type CreateResult,
+  type TokenResponse,
 } from '../schemas/common.schema';
 
 /** Thrown when the API responds with Salesforce's `[{message, errorCode}]` error envelope. */
@@ -41,15 +42,26 @@ export class SalesforceRestClient {
 
   constructor(private readonly request: APIRequestContext) {}
 
+  /** Runs the JWT Bearer flow and stores the resulting token. */
   async authenticate(): Promise<void> {
-    const token = await new JwtAuthProvider(this.request).authenticate();
+    this.useToken(await new JwtAuthProvider(this.request).authenticate());
+  }
+
+  /**
+   * Adopts an already-issued token — used by the worker-scoped `authToken`
+   * fixture so the JWT exchange happens once per worker, not once per test.
+   */
+  useToken(token: TokenResponse): this {
     this.accessToken = token.access_token;
     this.instanceUrl = token.instance_url;
+    return this;
   }
 
   private authHeader(): Record<string, string> {
     if (!this.accessToken) {
-      throw new Error('SalesforceRestClient.authenticate() must be called before making requests');
+      throw new Error(
+        'SalesforceRestClient.authenticate()/useToken() must be called before making requests',
+      );
     }
     return { Authorization: `Bearer ${this.accessToken}` };
   }
@@ -62,25 +74,31 @@ export class SalesforceRestClient {
     return `${this.baseUrl()}/services/data/v${env.SF_API_VERSION}/sobjects/${path}`;
   }
 
-  /** Parses the response and validates it against `schema`, or throws SalesforceApiError. */
-  private async parseOrThrow<T>(
-    response: Awaited<ReturnType<APIRequestContext['get']>>,
-    schema: z.ZodType<T>,
-  ): Promise<T> {
-    const json = await response.json().catch(() => undefined);
+  /**
+   * Throws a typed `SalesforceApiError` built from Salesforce's
+   * `[{message, errorCode, fields}]` envelope when the response is not OK.
+   * Shared by every method so the parsing lives in exactly one place.
+   */
+  private async throwIfNotOk(response: APIResponse, fallbackMessage: string): Promise<void> {
+    if (response.ok()) return;
 
-    if (!response.ok()) {
-      const errors = SalesforceErrorResponseSchema.safeParse(json);
-      const first = errors.success ? errors.data[0] : undefined;
-      logger.warn('Salesforce API returned an error', { status: response.status(), body: json });
-      throw new SalesforceApiError(
-        response.status(),
-        first?.errorCode ?? 'UNKNOWN_ERROR',
-        first?.message ?? `Request failed with status ${response.status()}`,
-        first?.fields ?? [],
-      );
-    }
+    const json: unknown = await response.json().catch(() => undefined);
+    const errors = SalesforceErrorResponseSchema.safeParse(json);
+    const first = errors.success ? errors.data[0] : undefined;
+    logger.warn('Salesforce API returned an error', { status: response.status(), body: json });
+    throw new SalesforceApiError(
+      response.status(),
+      first?.errorCode ?? 'UNKNOWN_ERROR',
+      first?.message ?? fallbackMessage,
+      first?.fields ?? [],
+    );
+  }
 
+  /** Validates an OK response body against `schema`, or throws SalesforceApiError. */
+  private async parseOrThrow<T>(response: APIResponse, schema: z.ZodType<T>): Promise<T> {
+    await this.throwIfNotOk(response, `Request failed with status ${response.status()}`);
+
+    const json: unknown = await response.json().catch(() => undefined);
     const parsed = schema.safeParse(json);
     if (!parsed.success) {
       throw new Error(`Response failed schema validation: ${parsed.error.message}`);
@@ -114,32 +132,14 @@ export class SalesforceRestClient {
       headers: this.authHeader(),
       data: input,
     });
-    if (!response.ok()) {
-      const json = await response.json().catch(() => undefined);
-      const errors = SalesforceErrorResponseSchema.safeParse(json);
-      const first = errors.success ? errors.data[0] : undefined;
-      throw new SalesforceApiError(
-        response.status(),
-        first?.errorCode ?? 'UNKNOWN_ERROR',
-        first?.message ?? 'Update failed',
-      );
-    }
+    await this.throwIfNotOk(response, 'Update failed');
   }
 
   async deleteAccount(id: string): Promise<void> {
     const response = await this.request.delete(this.sobjectsUrl(`Account/${id}`), {
       headers: this.authHeader(),
     });
-    if (!response.ok()) {
-      const json = await response.json().catch(() => undefined);
-      const errors = SalesforceErrorResponseSchema.safeParse(json);
-      const first = errors.success ? errors.data[0] : undefined;
-      throw new SalesforceApiError(
-        response.status(),
-        first?.errorCode ?? 'UNKNOWN_ERROR',
-        first?.message ?? 'Delete failed',
-      );
-    }
+    await this.throwIfNotOk(response, 'Delete failed');
   }
 
   async getIdea(id: string): Promise<Idea> {

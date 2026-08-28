@@ -44,6 +44,14 @@ Flip `USE_MOCK_SF_API=false` and provide `SF_LOGIN_URL` / `SF_CLIENT_ID` / `SF_U
 
 A hand-rolled HTTP server is the most literal reproduction of "a Salesforce org" available without one: real sockets, real HTTP semantics (status codes, headers, JSON bodies), zero request-interception "magic" that could hide a real client bug. It also has zero runtime dependencies, which matters more in a portfolio piece meant to be read end-to-end than in a large production suite.
 
+### Test isolation against the mock
+
+The mock is a single process, started once by `globalSetup` and shared by every worker; its in-memory state is only reset between whole runs (a fresh `seedState()`), not between tests. Per-test isolation is therefore achieved the same way it would be against a real org: each test creates uniquely-named data (`buildAccountInput` in `src/utils/test-data.ts`) and registers new record ids with the `trackedAccountIds` fixture, which deletes them in teardown even if an assertion fails partway through. Per-worker mock namespacing would buy stricter isolation but is deliberately out of scope — unique data plus deterministic cleanup is the pattern that transfers to production.
+
+### Auth is exchanged once per worker
+
+The JWT Bearer token is issued by a `worker`-scoped `authToken` fixture and reused by every `sfClient` in that worker (each test still gets a fresh `APIRequestContext`). A bearer token is context-independent and valid for the length of a run, so this removes one token exchange per test — cheap against the mock, but the difference between a fast suite and login-rate-limit failures against a real org.
+
 ## CI/CD
 
 Two workflows (`.github/workflows/`):
