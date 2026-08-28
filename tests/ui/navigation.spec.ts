@@ -1,0 +1,47 @@
+import { test, expect } from '../../src/ui/fixtures/ui-fixtures';
+
+test.describe('Home page & global navigation @ui @smoke', () => {
+  test('loads the IdeaExchange home page for a guest user', async ({ homePage }) => {
+    await homePage.goto();
+
+    await expect(homePage.page).toHaveTitle(/idea ?exchange/i);
+    await expect(homePage.heading()).toBeVisible();
+
+    // A guest (not logged in) sees Sign Up / Log In — proves we're testing
+    // the real public, unauthenticated entry point, not a cached/authed session.
+    expect(await homePage.nav.isGuest()).toBe(true);
+  });
+
+  test('primary navigation links point at their expected sections', async ({ homePage }) => {
+    await homePage.goto();
+
+    for (const name of ['Known Issues', 'Help', 'Trust']) {
+      await expect(homePage.nav.navLink(name)).toBeVisible();
+    }
+  });
+
+  test('the global header search box accepts input', async ({ homePage }) => {
+    await homePage.goto();
+
+    await homePage.nav.searchInput.fill('Data Cloud');
+    await expect(homePage.nav.searchInput).toHaveValue('Data Cloud');
+  });
+
+  test('"IdeaExchange Community" CTA opens the Trailblazer Community', async ({
+    homePage,
+    page,
+    context,
+  }) => {
+    await homePage.goto();
+
+    const [popup] = await Promise.all([
+      context.waitForEvent('page'),
+      homePage.ideaExchangeCommunityLink().click(),
+    ]);
+    await popup.waitForLoadState('domcontentloaded');
+
+    expect(popup.url()).toContain('salesforce.com');
+    await popup.close();
+    await expect(page).toHaveURL(/ideas\.salesforce\.com/);
+  });
+});

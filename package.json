@@ -1,0 +1,46 @@
+{
+  "name": "salesforce-experience-cloud-qa-framework",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open-source Playwright framework for testing Salesforce-based SaaS platforms: UI (Experience Cloud / Lightning), REST API, and GitHub Actions CI/CD.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --project=ui",
+    "test:ui:headed": "playwright test --project=ui --headed",
+    "test:ui:smoke": "playwright test --project=ui --grep @smoke",
+    "test:api": "playwright test --project=api",
+    "test:debug": "playwright test --debug",
+    "report": "playwright show-report",
+    "codegen": "playwright codegen https://ideas.salesforce.com",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "verify": "npm run typecheck && npm run lint && npm run format:check",
+    "install:browsers": "playwright install --with-deps chromium firefox webkit"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.11.0",
+    "@playwright/test": "^1.48.0",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.7.0",
+    "@typescript-eslint/eslint-plugin": "^8.8.0",
+    "@typescript-eslint/parser": "^8.8.0",
+    "eslint": "^9.11.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-playwright": "^1.6.2",
+    "globals": "^17.11.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.2"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "jsonwebtoken": "^9.0.2",
+    "zod": "^3.23.8"
+  }
+}

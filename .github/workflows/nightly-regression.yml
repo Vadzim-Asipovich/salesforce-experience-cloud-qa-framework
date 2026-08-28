@@ -1,0 +1,58 @@
+name: Nightly regression
+
+on:
+  schedule:
+    # 02:00 UTC daily
+    - cron: '0 2 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  full-ui-regression:
+    name: Full UI regression (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [ui, ui-firefox, ui-webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps
+      - run: npx playwright test --project=${{ matrix.project }}
+        env:
+          CI: true
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: nightly-report-${{ matrix.project }}
+          path: |
+            playwright-report/
+            test-results/junit.xml
+          retention-days: 30
+
+  full-api-regression:
+    name: Full API regression
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run test:api
+        env:
+          CI: true
+          USE_MOCK_SF_API: true
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: nightly-report-api
+          path: |
+            playwright-report/
+            test-results/junit.xml
+          retention-days: 30
