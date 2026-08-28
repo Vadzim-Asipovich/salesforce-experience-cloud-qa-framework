@@ -42,6 +42,9 @@ const EnvSchema = z.object({
     .transform((v) => v === 'true' || v === '1'),
 
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+
+  /** Base URL for requirement/issue links emitted as test annotations. */
+  JIRA_BASE_URL: z.string().url().default('https://your-org.atlassian.net/browse'),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

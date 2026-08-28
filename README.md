@@ -36,6 +36,8 @@ Why a real public Salesforce site instead of a private fixture, and a mock inste
 | `npm test`                              | UI (Chromium) + API, everything                    |
 | `npm run test:ui`                       | UI suite only (Chromium)                           |
 | `npm run test:ui:smoke`                 | Just `@smoke`-tagged UI specs — what PR checks run |
+| `npm run test:smoke`                    | `@smoke` across every project (UI + API)           |
+| `npm run test:regression`               | `@regression` across every project                 |
 | `npm run test:ui:headed`                | UI suite with a visible browser window             |
 | `npm run test:api`                      | API suite only, against the mock server            |
 | `npm run test:debug`                    | Playwright's step-through debugger                 |
@@ -45,6 +47,20 @@ Why a real public Salesforce site instead of a private fixture, and a mock inste
 | `npm run verify`                        | All three gates — what CI runs before any test     |
 
 Run the full cross-browser matrix (Chromium/Firefox/WebKit) with `npx playwright test` after `npx playwright install --with-deps` (no browser flags) — the default `npm test` sticks to Chromium for speed; the nightly CI workflow runs all three.
+
+## Test tags & traceability
+
+Tags are Playwright's typed `{ tag }` option (not magic strings in titles), filterable with `--grep` / `--grep-invert`:
+
+| Tag                                                              | Meaning                                              |
+| ---------------------------------------------------------------- | ---------------------------------------------------- |
+| `@smoke`                                                         | Fast, high-value check — one or two per feature area |
+| `@regression`                                                    | Full functional coverage (on every `describe`)       |
+| `@navigation` `@ideas` `@auth` `@accounts` `@contract` `@errors` | Feature area                                         |
+
+UI vs API is the Playwright _project_ (`--project=ui` / `--project=api`), so there's no `@ui` / `@api` tag.
+
+Every test also carries an `annotation` linking it to a requirement/issue key via `src/utils/traceability.ts` (`issue('ST-142')`, `testCase('ST-TC-17')`). These render in the HTML report and serialise into the JUnit XML CI produces, which an Xray/Zephyr "import results" step consumes. Point `JIRA_BASE_URL` at a real instance to make the links resolve.
 
 ## Project layout
 
@@ -63,7 +79,7 @@ src/
     auth/                   JWT Bearer flow (real-org and mock paths, same code)
     fixtures/                `test.extend` wiring an authenticated client into specs
   mocks/                    Dependency-free Salesforce REST API mock (+ global setup/teardown)
-  utils/                    Secret-masking logger, test-data builders
+  utils/                    Secret-masking logger, test-data builders, traceability helpers
 tests/
   ui/                       5 specs — navigation, search input, filter/sort, idea detail, guest gating
   api/                      3 specs — Account CRUD, Idea schema contract, error handling & security

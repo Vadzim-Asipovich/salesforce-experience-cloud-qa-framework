@@ -7,7 +7,8 @@ This document explains the _why_ behind the structure — the README covers the 
 1. **Runs green for a stranger, from a clean clone, with zero secrets.** A framework nobody can execute isn't a framework, it's a slide deck. `npm ci && npx playwright install && npm test` must work on a laptop that has never seen a Salesforce org.
 2. **Exercises real Salesforce surfaces, not stand-ins for their own sake.** The UI suite drives a real, live, publicly-accessible Salesforce Experience Cloud (Lightning/Aura) site. The API suite speaks the real Salesforce REST API contract — request/response shapes, the JWT Bearer auth flow, the `[{message, errorCode}]` error envelope — against a mock that implements that contract faithfully, so the exact same client code runs unmodified against a real org.
 3. **Fails with a diagnosis, not a mystery.** Typed clients, schema validation on every response, `test.step()` breadcrumbing, traces/videos/screenshots retained on failure, secret-masked logging.
-4. **Costs little to maintain.** Page objects and components isolate Lightning/Aura's shadow-DOM churn behind a stable API; CI is parallel and fast; lint/format/typecheck gates catch drift before a human has to.
+4. **Traces back to a requirement.** Every test declares a functional tag (`@smoke` / `@regression` / feature) via Playwright's typed `{ tag }` option and an `annotation` carrying a Jira/Xray key (`src/utils/traceability.ts`). Annotations render in the HTML report and serialise into the JUnit XML CI already emits, so an Xray/Zephyr "import execution results" step maps automated runs back onto the requirement set; `JIRA_BASE_URL` is the only value to change to point at a real tracker.
+5. **Costs little to maintain.** Page objects and components isolate Lightning/Aura's shadow-DOM churn behind a stable API; CI is parallel and fast; lint/format/typecheck gates catch drift before a human has to.
 
 ## UI target: why ideas.salesforce.com
 
