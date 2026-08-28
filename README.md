@@ -14,7 +14,8 @@ cd salesforce-experience-cloud-qa-framework
 cp .env.example .env
 npm ci
 npx playwright install --with-deps chromium   # add firefox webkit for the full matrix
-npm test                                      # UI + API, all projects
+npm run test:ui    # UI with chrome
+npm run test:api    # API tests
 ```
 
 No Salesforce org, no credentials, no VPN. It just runs.

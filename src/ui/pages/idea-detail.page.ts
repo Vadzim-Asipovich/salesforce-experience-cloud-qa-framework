@@ -26,9 +26,9 @@ export class IdeaDetailPage extends BasePage {
   }
 
   async gotoById(id: string, slug = ''): Promise<void> {
-    await this.page.goto(`/s/idea/${id}/${slug}`);
+    await this.open(`/s/idea/${id}/${slug}`);
     await this.acceptCookiesIfPresent();
-    await this.titleHeading.waitFor({ state: 'visible' });
+    await this.titleHeading.waitFor({ state: 'visible', timeout: 20_000 });
   }
 
   get titleHeading(): Locator {

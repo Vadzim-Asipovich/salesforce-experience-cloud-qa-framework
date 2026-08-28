@@ -20,6 +20,18 @@ export abstract class BasePage {
   /** Public so specs can drop to raw Playwright APIs (e.g. `context`, `waitForURL`) when a page object doesn't cover something. */
   constructor(public readonly page: Page) {}
 
+  /**
+   * Navigate within the Experience Cloud app. Uses `domcontentloaded`, not
+   * Playwright's default `load`: the Aura/LWC bundle keeps pulling
+   * non-critical resources (images, analytics beacons, long-poll
+   * connections) long after the page is interactive, so waiting for `load`
+   * routinely costs 10-15s in Firefox/WebKit and signals nothing useful.
+   * Callers wait on a real readiness element immediately afterwards.
+   */
+  protected async open(path: string): Promise<void> {
+    await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+  }
+
   async acceptCookiesIfPresent(): Promise<void> {
     await dismissCookieBannerIfPresent(this.page);
   }

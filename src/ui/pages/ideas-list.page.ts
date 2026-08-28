@@ -25,9 +25,9 @@ export class IdeasListPage extends BasePage {
   async goto(): Promise<void> {
     // Confusingly, the "Ideas" nav tab routes to /s/search, not /s/ideas —
     // verified against the live nav's rendered href, not guessed.
-    await this.page.goto('/s/search');
+    await this.open('/s/search');
     await this.acceptCookiesIfPresent();
-    await this.resultsSummary.waitFor({ state: 'visible' });
+    await this.resultsSummary.waitFor({ state: 'visible', timeout: 20_000 });
   }
 
   get allIdeasTab(): Locator {

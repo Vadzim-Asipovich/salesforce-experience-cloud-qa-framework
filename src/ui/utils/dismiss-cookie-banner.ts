@@ -9,8 +9,10 @@ import type { Page } from '@playwright/test';
 export async function dismissCookieBannerIfPresent(page: Page): Promise<void> {
   const acceptButton = page.getByRole('button', { name: /accept all cookies/i });
   try {
-    await acceptButton.waitFor({ state: 'visible', timeout: 5_000 });
-    await acceptButton.click();
+    // One bounded call: `click()` auto-waits for the button to be visible
+    // and actionable, so a separate `waitFor` only doubles the cost of the
+    // (common) case where the banner never shows.
+    await acceptButton.click({ timeout: 4_000 });
   } catch {
     // Banner didn't appear (already dismissed / cookie already set) — not an error.
   }

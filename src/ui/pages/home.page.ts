@@ -11,7 +11,7 @@ export class HomePage extends BasePage {
   }
 
   async goto(): Promise<void> {
-    await this.page.goto('/s/');
+    await this.open('/s/');
     await this.acceptCookiesIfPresent();
   }
 

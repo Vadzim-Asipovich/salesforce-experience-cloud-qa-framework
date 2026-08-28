@@ -18,7 +18,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!env.CI,
   retries: env.CI ? 2 : 0,
-  workers: env.CI ? 4 : undefined,
+  workers: env.CI ? 4 : 1,
 
   globalSetup: require.resolve('./src/mocks/global-setup'),
   globalTeardown: require.resolve('./src/mocks/global-teardown'),
@@ -37,6 +37,11 @@ export default defineConfig({
     {
       name: 'ui',
       testDir: './tests/ui',
+      // The `ui` projects drive the public Salesforce site over the open
+      // internet; a cold Aura-app load alone can take 15s+ on the
+      // non-Chromium engines, so the 30s default (kept for `api`, which
+      // only talks to the in-process mock) is too tight here.
+      timeout: 60_000,
       use: {
         ...devices['Desktop Chrome'],
         baseURL: env.UI_BASE_URL,
@@ -45,11 +50,13 @@ export default defineConfig({
     {
       name: 'ui-firefox',
       testDir: './tests/ui',
+      timeout: 60_000,
       use: { ...devices['Desktop Firefox'], baseURL: env.UI_BASE_URL },
     },
     {
       name: 'ui-webkit',
       testDir: './tests/ui',
+      timeout: 60_000,
       use: { ...devices['Desktop Safari'], baseURL: env.UI_BASE_URL },
     },
     {
