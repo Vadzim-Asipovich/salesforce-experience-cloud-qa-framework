@@ -18,9 +18,11 @@ The brief asked for an open-source Playwright framework covering UI, API, and Gi
 
 **Why I believe I'm well positioned to help execute this efficiently:**
 
-[This section is intentionally left for you to fill in with your own real background — years of experience, prior Salesforce/QA-architecture work, team composition if you're representing more than yourself, and any relevant case studies. I don't have that information and won't invent it on your behalf; everything above only describes what's actually in the attached repository.]
+**Why I believe I'm well positioned to help execute this efficiently:**
+
+I bring 8+ years in QA and 5+ years building test automation frameworks in TypeScript, JavaScript, and Playwright. Most recently at Godel Technologies, I led the full migration of a legacy C#/Selenium framework to Playwright/TypeScript for a FinTech client, architecting the new suite and validating hundreds of REST API tests against Swagger/OpenAPI contracts while cutting execution time by more than 50%. As part of that same engagement, I designed and executed automated UI and API tests validating bi-directional data synchronization and API response payloads between the platform and Salesforce CRM — so the JWT auth flow and `/sobjects` contract handling in this sample build on integration work I've actually shipped, not just read about. At Tango, a live-streaming platform with 400M+ downloads, I built E2E UI and API coverage holding 95%+ stability under high load across 10+ production release trains without delay. At ICE Mortgage Technology I worked across a Java/Kafka microservice backend, pairing API automation (Java/JUnit/RestAssured) with UI automation in Playwright, and drove a 20% reduction in requirement-related defects and 25% fewer production issues through tighter requirements-to-test traceability. I've also defined an automation strategy from a blank slate at Kyriba and led QA — including GraphQL API testing and cross-browser automation — at Amasty.
 
 I'd be glad to walk the team through any of the architectural decisions above, discuss trade-offs, or talk through how this foundation would extend to Singletrack's actual Salesforce org, CI environment, and reporting needs.
 
 Kind regards,
-[Your Name]
+Vadzim Asipovich

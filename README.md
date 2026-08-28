@@ -9,7 +9,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full reasoning behind e
 ## Quickstart
 
 ```bash
-git clone <this-repo>
+git clone git@github.com:Vadzim-Asipovich/salesforce-experience-cloud-qa-framework.git
 cd salesforce-experience-cloud-qa-framework
 cp .env.example .env
 npm ci
