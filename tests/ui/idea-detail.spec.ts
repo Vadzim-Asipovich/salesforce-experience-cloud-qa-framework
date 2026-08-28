@@ -13,12 +13,17 @@ test.describe('Idea detail page @ui', () => {
   }) => {
     await ideaDetailPage.gotoById(KNOWN_IDEA_ID);
 
-    expect(await ideaDetailPage.readTitle()).toBe(KNOWN_IDEA_TITLE);
-    expect(await ideaDetailPage.readStatus()).toBe('Delivered');
+    await expect(ideaDetailPage.titleHeading).toHaveText(KNOWN_IDEA_TITLE);
+    await expect(ideaDetailPage.statusBadge).toHaveText('Delivered');
 
-    const { points, votes } = await ideaDetailPage.pointsAndVotes();
-    expect(points).toBeGreaterThan(100_000);
-    expect(votes).toBeGreaterThan(1_000);
+    // pointsAndVotes() is a raw shadow-DOM read; poll it so a slow-hydrating
+    // lightning-formatted-number gets a retry window instead of a hard fail.
+    await expect
+      .poll(async () => (await ideaDetailPage.pointsAndVotes()).points)
+      .toBeGreaterThan(100_000);
+    await expect
+      .poll(async () => (await ideaDetailPage.pointsAndVotes()).votes)
+      .toBeGreaterThan(1_000);
 
     await expect(ideaDetailPage.postedDate).toContainText(/posted/i);
     await expect(ideaDetailPage.postedDate).toContainText('2006');

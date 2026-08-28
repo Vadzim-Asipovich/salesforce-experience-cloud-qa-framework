@@ -39,8 +39,4 @@ export class NavBarComponent {
     await this.searchInput.fill(term);
     await this.searchInput.press('Enter');
   }
-
-  async isGuest(): Promise<boolean> {
-    return (await this.signUpButton.count()) > 0 || (await this.logInButton.count()) > 0;
-  }
 }

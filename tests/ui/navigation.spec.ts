@@ -9,7 +9,8 @@ test.describe('Home page & global navigation @ui @smoke', () => {
 
     // A guest (not logged in) sees Sign Up / Log In — proves we're testing
     // the real public, unauthenticated entry point, not a cached/authed session.
-    expect(await homePage.nav.isGuest()).toBe(true);
+    await expect(homePage.nav.signUpButton).toBeVisible();
+    await expect(homePage.nav.logInButton).toBeVisible();
   });
 
   test('primary navigation links point at their expected sections', async ({ homePage }) => {

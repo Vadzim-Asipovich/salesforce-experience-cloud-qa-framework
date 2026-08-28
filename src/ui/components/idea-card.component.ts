@@ -37,17 +37,14 @@ export class IdeaCardComponent {
     return this.root.locator('span.idea-result-details__status-badge');
   }
 
-  async title(): Promise<string> {
-    return ((await this.titleLink.textContent()) ?? '').trim();
-  }
-
+  /**
+   * Parsed points total. A raw `textContent()` read, so callers that assert
+   * on it must wrap the assertion in `expect.poll(...)` — the value is not
+   * auto-retried. Text getters above are for web-first `expect(locator)`.
+   */
   async points(): Promise<number> {
     const text = ((await this.pointsAmount.textContent()) ?? '0').trim();
     return Number.parseInt(text.replace(/,/g, ''), 10);
-  }
-
-  async status(): Promise<string> {
-    return ((await this.statusBadge.textContent()) ?? '').trim();
   }
 
   async open(): Promise<void> {

@@ -34,26 +34,26 @@ test.describe('Ideas listing — category filter & sort @ui', () => {
     // The default sort is by Points (high to low); the very first idea
     // has accumulated a large point total over years — a reliable anchor
     // to detect that switching to Date actually re-ordered the feed.
+    // points() is a raw text read, so poll it rather than capturing once.
+    await expect.poll(() => ideasListPage.ideaCard(0).points()).toBeGreaterThan(1_000);
     const pointsSortedTopPoints = await ideasListPage.ideaCard(0).points();
-    expect(pointsSortedTopPoints).toBeGreaterThan(1_000);
 
     await ideasListPage.sortBy('Date');
     await expect(ideasListPage.ideaCards.first()).toBeVisible();
 
-    const dateSortedTopPoints = await ideasListPage.ideaCard(0).points();
     // A brand-new idea realistically has far fewer points than the
     // highest-ever community favourite — a loose but stable bound.
-    expect(dateSortedTopPoints).toBeLessThan(pointsSortedTopPoints);
+    await expect.poll(() => ideasListPage.ideaCard(0).points()).toBeLessThan(pointsSortedTopPoints);
   });
 
   test('each card in the default view exposes a valid status badge', async ({ ideasListPage }) => {
     await ideasListPage.goto();
-    const knownStatuses = ['Open', 'In Development', 'Delivered', 'Archived'];
+    const STATUS_RE = /^(Open|In Development|Delivered|Archived)$/;
 
+    await expect(ideasListPage.ideaCards.first()).toBeVisible();
     const count = await ideasListPage.ideaCount();
     for (let i = 0; i < Math.min(count, 10); i++) {
-      const status = await ideasListPage.ideaCard(i).status();
-      expect(knownStatuses).toContain(status);
+      await expect(ideasListPage.ideaCard(i).statusBadge).toHaveText(STATUS_RE);
     }
   });
 });

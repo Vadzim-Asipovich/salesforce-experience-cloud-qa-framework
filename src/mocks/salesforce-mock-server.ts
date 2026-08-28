@@ -78,101 +78,81 @@ function requireBearerAuth(req: http.IncomingMessage, state: MockState): boolean
 export function createMockServer(): http.Server {
   const state = seedState();
 
-  return http.createServer(async (req, res) => {
-    try {
-      const url = new URL(req.url ?? '/', 'http://localhost');
-      const { pathname } = url;
-      const method = req.method ?? 'GET';
+  return http.createServer((req, res) => {
+    // The request listener must return void: run the async router, and make
+    // sure a rejection still yields a response rather than an unhandled
+    // rejection (the router's own try/catch covers the expected paths).
+    void handleRequest(req, res, state).catch((err: unknown) => {
+      if (!res.headersSent) {
+        sendSfError(
+          res,
+          500,
+          'INTERNAL_SERVER_ERROR',
+          err instanceof Error ? err.message : String(err),
+        );
+      }
+    });
+  });
+}
 
-      // ── OAuth2 JWT Bearer token exchange ────────────────────────────
-      if (pathname === '/services/oauth2/token' && method === 'POST') {
-        // Real Salesforce validates a signed JWT assertion here. The mock
-        // trusts any well-formed request — the point is to exercise the
-        // client's token-exchange + storage code path deterministically.
-        const token = `mock-access-token-${randomUUID()}`;
-        state.issuedTokens.add(token);
-        sendJson(res, 200, {
-          access_token: token,
-          instance_url: `http://127.0.0.1:${url.port || req.socket.localPort}`,
-          token_type: 'Bearer',
-          issued_at: String(Date.now()),
-          signature: 'mock-signature',
-        });
+async function handleRequest(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  state: MockState,
+): Promise<void> {
+  try {
+    const url = new URL(req.url ?? '/', 'http://localhost');
+    const { pathname } = url;
+    const method = req.method ?? 'GET';
+
+    // ── OAuth2 JWT Bearer token exchange ────────────────────────────
+    if (pathname === '/services/oauth2/token' && method === 'POST') {
+      // Real Salesforce validates a signed JWT assertion here. The mock
+      // trusts any well-formed request — the point is to exercise the
+      // client's token-exchange + storage code path deterministically.
+      const token = `mock-access-token-${randomUUID()}`;
+      state.issuedTokens.add(token);
+      sendJson(res, 200, {
+        access_token: token,
+        instance_url: `http://127.0.0.1:${url.port || req.socket.localPort}`,
+        token_type: 'Bearer',
+        issued_at: String(Date.now()),
+        signature: 'mock-signature',
+      });
+      return;
+    }
+
+    // Every /services/data/* route requires a bearer token, exactly
+    // like the real API's INVALID_SESSION_ID behaviour.
+    if (pathname.startsWith('/services/data/') && !requireBearerAuth(req, state)) {
+      sendSfError(res, 401, 'INVALID_SESSION_ID', 'Session expired or invalid');
+      return;
+    }
+
+    // ── sobjects/Account ────────────────────────────────────────────
+    const accountMatch = pathname.match(
+      /^\/services\/data\/v[\d.]+\/sobjects\/Account\/?([\w-]*)$/,
+    );
+    if (accountMatch) {
+      const id = accountMatch[1];
+
+      if (method === 'POST' && !id) {
+        const body = await readJsonBody<Record<string, unknown>>(req);
+        if (!body.Name || typeof body.Name !== 'string') {
+          sendSfError(res, 400, 'REQUIRED_FIELD_MISSING', 'Required fields are missing: [Name]', [
+            'Name',
+          ]);
+          return;
+        }
+        const newId = `001${randomUUID().replace(/-/g, '').slice(0, 15).toUpperCase()}`;
+        const record: SObjectRecord = { Id: newId, ...body };
+        state.accounts.set(newId, record);
+        sendJson(res, 201, { id: newId, success: true, errors: [] });
         return;
       }
 
-      // Every /services/data/* route requires a bearer token, exactly
-      // like the real API's INVALID_SESSION_ID behaviour.
-      if (pathname.startsWith('/services/data/') && !requireBearerAuth(req, state)) {
-        sendSfError(res, 401, 'INVALID_SESSION_ID', 'Session expired or invalid');
-        return;
-      }
-
-      // ── sobjects/Account ────────────────────────────────────────────
-      const accountMatch = pathname.match(
-        /^\/services\/data\/v[\d.]+\/sobjects\/Account\/?([\w-]*)$/,
-      );
-      if (accountMatch) {
-        const id = accountMatch[1];
-
-        if (method === 'POST' && !id) {
-          const body = await readJsonBody<Record<string, unknown>>(req);
-          if (!body.Name || typeof body.Name !== 'string') {
-            sendSfError(res, 400, 'REQUIRED_FIELD_MISSING', 'Required fields are missing: [Name]', [
-              'Name',
-            ]);
-            return;
-          }
-          const newId = `001${randomUUID().replace(/-/g, '').slice(0, 15).toUpperCase()}`;
-          const record: SObjectRecord = { Id: newId, ...body };
-          state.accounts.set(newId, record);
-          sendJson(res, 201, { id: newId, success: true, errors: [] });
-          return;
-        }
-
-        if (method === 'GET' && id) {
-          const record = state.accounts.get(id);
-          if (!record) {
-            sendSfError(
-              res,
-              404,
-              'NOT_FOUND',
-              `Provided external ID field does not exist or is not accessible: ${id}`,
-            );
-            return;
-          }
-          sendJson(res, 200, record);
-          return;
-        }
-
-        if (method === 'PATCH' && id) {
-          const record = state.accounts.get(id);
-          if (!record) {
-            sendSfError(res, 404, 'NOT_FOUND', `No such record: ${id}`);
-            return;
-          }
-          const body = await readJsonBody<Record<string, unknown>>(req);
-          state.accounts.set(id, { ...record, ...body, Id: id });
-          res.writeHead(204).end();
-          return;
-        }
-
-        if (method === 'DELETE' && id) {
-          if (!state.accounts.has(id)) {
-            sendSfError(res, 404, 'NOT_FOUND', `No such record: ${id}`);
-            return;
-          }
-          state.accounts.delete(id);
-          res.writeHead(204).end();
-          return;
-        }
-      }
-
-      // ── sobjects/Idea (read-only, mirrors ideas.salesforce.com data) ─
-      const ideaMatch = pathname.match(/^\/services\/data\/v[\d.]+\/sobjects\/Idea\/?([\w-]*)$/);
-      if (ideaMatch && method === 'GET') {
-        const id = ideaMatch[1] ?? '';
-        const record = state.ideas.get(id);
+      if (method === 'GET' && id) {
+        const record = state.accounts.get(id);
         if (!record) {
           sendSfError(
             res,
@@ -186,16 +166,56 @@ export function createMockServer(): http.Server {
         return;
       }
 
-      sendSfError(res, 404, 'NOT_FOUND', `Unrecognized endpoint: ${method} ${pathname}`);
-    } catch (err) {
-      sendSfError(
-        res,
-        500,
-        'INTERNAL_SERVER_ERROR',
-        err instanceof Error ? err.message : String(err),
-      );
+      if (method === 'PATCH' && id) {
+        const record = state.accounts.get(id);
+        if (!record) {
+          sendSfError(res, 404, 'NOT_FOUND', `No such record: ${id}`);
+          return;
+        }
+        const body = await readJsonBody<Record<string, unknown>>(req);
+        state.accounts.set(id, { ...record, ...body, Id: id });
+        res.writeHead(204).end();
+        return;
+      }
+
+      if (method === 'DELETE' && id) {
+        if (!state.accounts.has(id)) {
+          sendSfError(res, 404, 'NOT_FOUND', `No such record: ${id}`);
+          return;
+        }
+        state.accounts.delete(id);
+        res.writeHead(204).end();
+        return;
+      }
     }
-  });
+
+    // ── sobjects/Idea (read-only, mirrors ideas.salesforce.com data) ─
+    const ideaMatch = pathname.match(/^\/services\/data\/v[\d.]+\/sobjects\/Idea\/?([\w-]*)$/);
+    if (ideaMatch && method === 'GET') {
+      const id = ideaMatch[1] ?? '';
+      const record = state.ideas.get(id);
+      if (!record) {
+        sendSfError(
+          res,
+          404,
+          'NOT_FOUND',
+          `Provided external ID field does not exist or is not accessible: ${id}`,
+        );
+        return;
+      }
+      sendJson(res, 200, record);
+      return;
+    }
+
+    sendSfError(res, 404, 'NOT_FOUND', `Unrecognized endpoint: ${method} ${pathname}`);
+  } catch (err) {
+    sendSfError(
+      res,
+      500,
+      'INTERNAL_SERVER_ERROR',
+      err instanceof Error ? err.message : String(err),
+    );
+  }
 }
 
 export function startMockServer(port: number): Promise<http.Server> {

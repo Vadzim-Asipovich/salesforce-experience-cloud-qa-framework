@@ -57,15 +57,11 @@ export class IdeaDetailPage extends BasePage {
     return this.page.locator('.idx-points-section').first();
   }
 
-  async readStatus(): Promise<string> {
-    return ((await this.statusBadge.textContent()) ?? '').trim();
-  }
-
-  async readTitle(): Promise<string> {
-    return ((await this.titleHeading.textContent()) ?? '').trim();
-  }
-
-  /** Pierces the `lightning-formatted-number` shadow trees to read "125,570 Points12,619 Votes". */
+  /**
+   * Pierces the `lightning-formatted-number` shadow trees to read
+   * "125,570 Points12,619 Votes". A raw in-page read with no web-first
+   * equivalent, so callers must assert on it via `expect.poll(...)`.
+   */
   async pointsAndVotes(): Promise<{ points: number; votes: number }> {
     const raw = await this.pointsAndVotesSection.evaluate((el) => {
       function deepText(node: Element | ShadowRoot): string {

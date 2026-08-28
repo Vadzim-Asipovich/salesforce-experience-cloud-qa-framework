@@ -13,7 +13,8 @@ export default [
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        project: './tsconfig.json',
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
       },
       globals: {
         ...globals.node,
@@ -32,6 +33,13 @@ export default [
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
+      // Type-aware async-safety rules: a forgotten `await` on a Playwright
+      // call is the single biggest flake source, and these catch it. The
+      // broader `recommended-type-checked` set (no-unsafe-*) is a separate,
+      // larger cleanup — deliberately not enabled here.
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
+      '@typescript-eslint/await-thenable': 'error',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },

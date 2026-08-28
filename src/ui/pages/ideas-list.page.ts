@@ -88,14 +88,4 @@ export class IdeasListPage extends BasePage {
   async ideaCount(): Promise<number> {
     return this.ideaCards.count();
   }
-
-  /** Reads every visible card's points value — used to assert sort order. */
-  async allPoints(): Promise<number[]> {
-    const count = await this.ideaCount();
-    const points: number[] = [];
-    for (let i = 0; i < count; i++) {
-      points.push(await this.ideaCard(i).points());
-    }
-    return points;
-  }
 }
