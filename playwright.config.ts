@@ -24,7 +24,12 @@ export default defineConfig({
   globalTeardown: require.resolve('./src/mocks/global-teardown'),
 
   reporter: env.CI
-    ? [['list'], ['html', { open: 'never' }], ['junit', { outputFile: 'test-results/junit.xml' }]]
+    ? [
+        ['github'],
+        ['list'],
+        ['html', { open: 'never' }],
+        ['junit', { outputFile: 'test-results/junit.xml' }],
+      ]
     : [['list'], ['html', { open: 'never' }]],
 
   use: {

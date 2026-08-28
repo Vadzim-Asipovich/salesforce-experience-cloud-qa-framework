@@ -104,6 +104,8 @@ Two GitHub Actions workflows:
 - **`pr-checks.yml`** — every PR and push to `main`: typecheck + lint + format, then UI-smoke (Chromium) and the full API suite in parallel. Fast, cheap, blocks merges on quality gates.
 - **`nightly-regression.yml`** — scheduled (02:00 UTC) and manually dispatchable: the full UI suite across Chromium/Firefox/WebKit plus the full API suite. HTML report and JUnit XML uploaded as artifacts either way.
 
+Every job has a `timeout-minutes` cap, browser binaries are cached on `~/.cache/ms-playwright` keyed by the lockfile, each nightly matrix leg installs only its own browser, and the `github` reporter annotates failing lines directly on the PR.
+
 ## Extending this to a real engagement
 
 This repo is a foundation built to demonstrate architecture, not the finished platform a production Salesforce SaaS needs — [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#what-a-real-engagement-would-add-next) lists the concrete next steps (real-org JWT setup, hybrid data-driven tests, visual regression, accessibility checks) in the order they'd typically get built.
