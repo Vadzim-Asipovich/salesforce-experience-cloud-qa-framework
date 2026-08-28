@@ -1,4 +1,4 @@
-import type { CreateAccountInput } from '../api/schemas/account.schema';
+import type { CreateAccountInput } from '@src/api/schemas/account.schema';
 
 /** Deterministic-enough-for-CI unique suffix (worker index + timestamp would work too;
  *  kept dependency-free and collision-safe within a single test run). */

@@ -13,6 +13,7 @@ jobs:
   quality-gates:
     name: Typecheck, lint & format
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,6 +27,7 @@ jobs:
     name: UI smoke (Chromium)
     needs: quality-gates
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,6 +35,11 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - run: npx playwright install --with-deps chromium
       - run: npm run test:ui:smoke
         env:
@@ -50,6 +57,7 @@ jobs:
     name: API suite (mock Salesforce)
     needs: quality-gates
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import { env } from './src/config/env';
+import { env } from '@src/config/env';
 
 /**
  * Two independent projects, one config:
@@ -24,7 +24,12 @@ export default defineConfig({
   globalTeardown: require.resolve('./src/mocks/global-teardown'),
 
   reporter: env.CI
-    ? [['list'], ['html', { open: 'never' }], ['junit', { outputFile: 'test-results/junit.xml' }]]
+    ? [
+        ['github'],
+        ['list'],
+        ['html', { open: 'never' }],
+        ['junit', { outputFile: 'test-results/junit.xml' }],
+      ]
     : [['list'], ['html', { open: 'never' }]],
 
   use: {

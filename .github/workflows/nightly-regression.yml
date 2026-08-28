@@ -10,10 +10,14 @@ jobs:
   full-ui-regression:
     name: Full UI regression (${{ matrix.project }})
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        project: [ui, ui-firefox, ui-webkit]
+        include:
+          - { project: ui, browser: chromium }
+          - { project: ui-firefox, browser: firefox }
+          - { project: ui-webkit, browser: webkit }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,7 +25,12 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ matrix.browser }}
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
       - run: npx playwright test --project=${{ matrix.project }}
         env:
           CI: true
@@ -37,6 +46,7 @@ jobs:
   full-api-regression:
     name: Full API regression
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

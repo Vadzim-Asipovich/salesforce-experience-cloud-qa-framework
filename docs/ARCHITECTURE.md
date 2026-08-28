@@ -7,7 +7,8 @@ This document explains the _why_ behind the structure — the README covers the 
 1. **Runs green for a stranger, from a clean clone, with zero secrets.** A framework nobody can execute isn't a framework, it's a slide deck. `npm ci && npx playwright install && npm test` must work on a laptop that has never seen a Salesforce org.
 2. **Exercises real Salesforce surfaces, not stand-ins for their own sake.** The UI suite drives a real, live, publicly-accessible Salesforce Experience Cloud (Lightning/Aura) site. The API suite speaks the real Salesforce REST API contract — request/response shapes, the JWT Bearer auth flow, the `[{message, errorCode}]` error envelope — against a mock that implements that contract faithfully, so the exact same client code runs unmodified against a real org.
 3. **Fails with a diagnosis, not a mystery.** Typed clients, schema validation on every response, `test.step()` breadcrumbing, traces/videos/screenshots retained on failure, secret-masked logging.
-4. **Costs little to maintain.** Page objects and components isolate Lightning/Aura's shadow-DOM churn behind a stable API; CI is parallel and fast; lint/format/typecheck gates catch drift before a human has to.
+4. **Traces back to a requirement.** Every test declares a functional tag (`@smoke` / `@regression` / feature) via Playwright's typed `{ tag }` option and an `annotation` carrying a Jira/Xray key (`src/utils/traceability.ts`). Annotations render in the HTML report and serialise into the JUnit XML CI already emits, so an Xray/Zephyr "import execution results" step maps automated runs back onto the requirement set; `JIRA_BASE_URL` is the only value to change to point at a real tracker.
+5. **Costs little to maintain.** Page objects and components isolate Lightning/Aura's shadow-DOM churn behind a stable API; CI is parallel and fast; lint/format/typecheck gates catch drift before a human has to.
 
 ## UI target: why ideas.salesforce.com
 
@@ -44,6 +45,14 @@ Flip `USE_MOCK_SF_API=false` and provide `SF_LOGIN_URL` / `SF_CLIENT_ID` / `SF_U
 
 A hand-rolled HTTP server is the most literal reproduction of "a Salesforce org" available without one: real sockets, real HTTP semantics (status codes, headers, JSON bodies), zero request-interception "magic" that could hide a real client bug. It also has zero runtime dependencies, which matters more in a portfolio piece meant to be read end-to-end than in a large production suite.
 
+### Test isolation against the mock
+
+The mock is a single process, started once by `globalSetup` and shared by every worker; its in-memory state is only reset between whole runs (a fresh `seedState()`), not between tests. Per-test isolation is therefore achieved the same way it would be against a real org: each test creates uniquely-named data (`buildAccountInput` in `src/utils/test-data.ts`) and registers new record ids with the `trackedAccountIds` fixture, which deletes them in teardown even if an assertion fails partway through. Per-worker mock namespacing would buy stricter isolation but is deliberately out of scope — unique data plus deterministic cleanup is the pattern that transfers to production.
+
+### Auth is exchanged once per worker
+
+The JWT Bearer token is issued by a `worker`-scoped `authToken` fixture and reused by every `sfClient` in that worker (each test still gets a fresh `APIRequestContext`). A bearer token is context-independent and valid for the length of a run, so this removes one token exchange per test — cheap against the mock, but the difference between a fast suite and login-rate-limit failures against a real org.
+
 ## CI/CD
 
 Two workflows (`.github/workflows/`):
@@ -60,5 +69,8 @@ This is a foundation, not the finished platform a production Salesforce SaaS nee
 1. **Real-org JWT setup docs** — a step-by-step Connected App walkthrough (this repo documents the client-side half; the admin-side Connected App configuration is org-specific).
 2. **Data-driven / hybrid tests** — API-seeded seed data, UI verification, API-side cleanup (the pattern the CRUD spec demonstrates in miniature).
 3. **Visual regression** on the Lightning components most prone to silent breakage across Salesforce releases.
-4. **Cross-environment config** (`local` / `qa` / `staging` / `prod`) via `src/config/env.ts`'s existing zod-validated pattern — already structured to add without touching call sites.
-5. **Accessibility assertions** (`@axe-core/playwright`) — the category-checkbox labelling gap this repo already documents is exactly the class of issue that catches.
+4. **Accessibility assertions** (`@axe-core/playwright`) — the category-checkbox labelling gap this repo already documents is exactly the class of issue that catches.
+
+### Already in place
+
+**Cross-environment config** — `TEST_ENV` (`local` / `qa` / `staging` / `prod`) selects a profile in `src/config/environments.ts` that supplies `UI_BASE_URL` / `SF_LOGIN_URL` / `USE_MOCK_SF_API`. Precedence is explicit-env-var → profile → schema default, resolved once in `loadEnv()`, so call sites (`env.UI_BASE_URL`, `apiBaseUrl()`) are unchanged. The `qa` / `staging` URLs are placeholders until pointed at a real Experience Cloud domain + Connected App.

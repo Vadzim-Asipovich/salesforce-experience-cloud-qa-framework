@@ -1,5 +1,6 @@
-import { test, expect } from '../../src/api/fixtures/api-fixtures';
-import { IdeaSchema } from '../../src/api/schemas/idea.schema';
+import { test, expect } from '@src/api/fixtures/api-fixtures';
+import { IdeaSchema } from '@src/api/schemas/idea.schema';
+import { issue, testCase } from '@src/utils/traceability';
 
 /**
  * Contract test: the `Idea` record served by the API must match both the
@@ -13,21 +14,29 @@ const KNOWN_IDEA_ID = 'a0B8W00000GdiWiUAJ';
 const KNOWN_IDEA_TITLE =
   "Dependent page layouts - data rules to show, hide, or make fields/sections req'd";
 
-test.describe('Idea sobject — schema contract @api', () => {
-  test('getIdea returns a payload matching the published IdeaSchema', async ({ sfClient }) => {
-    const idea = await sfClient.getIdea(KNOWN_IDEA_ID);
+test.describe('Idea sobject — schema contract', { tag: ['@regression', '@contract'] }, () => {
+  test(
+    'getIdea returns a payload matching the published IdeaSchema',
+    { tag: '@smoke', annotation: [issue('ST-411'), testCase('ST-TC-411')] },
+    async ({ sfClient }) => {
+      const idea = await sfClient.getIdea(KNOWN_IDEA_ID);
 
-    expect(() => IdeaSchema.parse(idea)).not.toThrow();
-    expect(idea.Id).toBe(KNOWN_IDEA_ID);
-    expect(idea.Name).toBe(KNOWN_IDEA_TITLE);
-    expect(idea.Status__c).toBe('Delivered');
-    expect(idea.Points__c).toBeGreaterThan(0);
-  });
+      expect(() => IdeaSchema.parse(idea)).not.toThrow();
+      expect(idea.Id).toBe(KNOWN_IDEA_ID);
+      expect(idea.Name).toBe(KNOWN_IDEA_TITLE);
+      expect(idea.Status__c).toBe('Delivered');
+      expect(idea.Points__c).toBeGreaterThan(0);
+    },
+  );
 
-  test('unknown idea id surfaces a NOT_FOUND Salesforce error', async ({ sfClient }) => {
-    await expect(sfClient.getIdea('a0Bdoesnotexist000')).rejects.toMatchObject({
-      status: 404,
-      errorCode: 'NOT_FOUND',
-    });
-  });
+  test(
+    'unknown idea id surfaces a NOT_FOUND Salesforce error',
+    { annotation: [issue('ST-412')] },
+    async ({ sfClient }) => {
+      await expect(sfClient.getIdea('a0Bdoesnotexist000')).rejects.toMatchObject({
+        status: 404,
+        errorCode: 'NOT_FOUND',
+      });
+    },
+  );
 });
