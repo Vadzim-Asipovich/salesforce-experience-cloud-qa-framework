@@ -1,9 +1,9 @@
 import fs from 'node:fs';
 import jwt from 'jsonwebtoken';
 import { type APIRequestContext } from '@playwright/test';
-import { env, apiBaseUrl } from '../../config/env';
+import { env, apiBaseUrl } from '@src/config/env';
 import { TokenResponseSchema, type TokenResponse } from '../schemas/common.schema';
-import { logger } from '../../utils/logger';
+import { logger } from '@src/utils/logger';
 
 /**
  * Salesforce's OAuth 2.0 JWT Bearer flow: sign a short-lived JWT assertion

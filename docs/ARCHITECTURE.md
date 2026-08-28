@@ -68,5 +68,8 @@ This is a foundation, not the finished platform a production Salesforce SaaS nee
 1. **Real-org JWT setup docs** — a step-by-step Connected App walkthrough (this repo documents the client-side half; the admin-side Connected App configuration is org-specific).
 2. **Data-driven / hybrid tests** — API-seeded seed data, UI verification, API-side cleanup (the pattern the CRUD spec demonstrates in miniature).
 3. **Visual regression** on the Lightning components most prone to silent breakage across Salesforce releases.
-4. **Cross-environment config** (`local` / `qa` / `staging` / `prod`) via `src/config/env.ts`'s existing zod-validated pattern — already structured to add without touching call sites.
-5. **Accessibility assertions** (`@axe-core/playwright`) — the category-checkbox labelling gap this repo already documents is exactly the class of issue that catches.
+4. **Accessibility assertions** (`@axe-core/playwright`) — the category-checkbox labelling gap this repo already documents is exactly the class of issue that catches.
+
+### Already in place
+
+**Cross-environment config** — `TEST_ENV` (`local` / `qa` / `staging` / `prod`) selects a profile in `src/config/environments.ts` that supplies `UI_BASE_URL` / `SF_LOGIN_URL` / `USE_MOCK_SF_API`. Precedence is explicit-env-var → profile → schema default, resolved once in `loadEnv()`, so call sites (`env.UI_BASE_URL`, `apiBaseUrl()`) are unchanged. The `qa` / `staging` URLs are placeholders until pointed at a real Experience Cloud domain + Connected App.

@@ -1,4 +1,4 @@
-import { test, expect } from '../../src/ui/fixtures/ui-fixtures';
+import { test, expect } from '@src/ui/fixtures/ui-fixtures';
 
 /**
  * Guest (unauthenticated) users can browse and search freely, but

@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { z } from 'zod';
+import { PROFILES, TEST_ENVS } from './environments';
 
 /**
  * Single source of truth for runtime configuration.
@@ -8,8 +9,14 @@ import { z } from 'zod';
  * once, at process start — a typo'd or missing variable fails fast with a
  * readable message instead of surfacing as a confusing test failure three
  * layers down.
+ *
+ * Precedence for the fields a profile can set: an explicit environment
+ * variable wins; otherwise the `TEST_ENV` profile's value; otherwise the
+ * schema default below. See ./environments.ts.
  */
 const EnvSchema = z.object({
+  TEST_ENV: z.enum(TEST_ENVS).default('local'),
+
   UI_BASE_URL: z.string().url().default('https://ideas.salesforce.com'),
 
   USE_MOCK_SF_API: z
@@ -48,7 +55,18 @@ function loadEnv(): Env {
       .join('\n');
     throw new Error(`Invalid environment configuration:\n${issues}\n\nSee .env.example.`);
   }
-  return parsed.data;
+
+  // Layer the selected profile *under* anything the environment set explicitly.
+  const profile = PROFILES[parsed.data.TEST_ENV];
+  return {
+    ...parsed.data,
+    UI_BASE_URL: process.env.UI_BASE_URL ?? profile.UI_BASE_URL,
+    SF_LOGIN_URL: process.env.SF_LOGIN_URL ?? profile.SF_LOGIN_URL,
+    USE_MOCK_SF_API:
+      process.env.USE_MOCK_SF_API !== undefined
+        ? parsed.data.USE_MOCK_SF_API
+        : profile.USE_MOCK_SF_API,
+  };
 }
 
 export const env = loadEnv();

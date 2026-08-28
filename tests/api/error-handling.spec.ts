@@ -1,8 +1,8 @@
 import { request as playwrightRequest } from '@playwright/test';
-import { test, expect } from '../../src/api/fixtures/api-fixtures';
-import { SalesforceApiError } from '../../src/api/clients/salesforce-rest.client';
-import { apiBaseUrl } from '../../src/config/env';
-import { logger } from '../../src/utils/logger';
+import { test, expect } from '@src/api/fixtures/api-fixtures';
+import { SalesforceApiError } from '@src/api/clients/salesforce-rest.client';
+import { apiBaseUrl } from '@src/config/env';
+import { logger } from '@src/utils/logger';
 
 test.describe('Error handling & security @api', () => {
   test('unauthenticated requests are rejected with INVALID_SESSION_ID', async ({ apiContext }) => {

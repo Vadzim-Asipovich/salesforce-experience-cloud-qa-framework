@@ -1,4 +1,4 @@
-import { env } from '../config/env';
+import { env } from '@src/config/env';
 
 type Level = 'debug' | 'info' | 'warn' | 'error';
 const LEVEL_ORDER: Record<Level, number> = { debug: 0, info: 1, warn: 2, error: 3 };

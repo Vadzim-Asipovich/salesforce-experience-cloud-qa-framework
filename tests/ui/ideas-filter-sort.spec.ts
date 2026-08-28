@@ -1,4 +1,4 @@
-import { test, expect } from '../../src/ui/fixtures/ui-fixtures';
+import { test, expect } from '@src/ui/fixtures/ui-fixtures';
 
 test.describe('Ideas listing — category filter & sort @ui', () => {
   test('filtering by a category narrows the results to that category', async ({

@@ -40,6 +40,20 @@ export default [
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
       '@typescript-eslint/await-thenable': 'error',
+      // Cross-directory imports go through the `@src/*` alias (tsconfig
+      // `paths`), never a deep relative path — keeps imports stable when
+      // files move. Same-directory `./` and single-hop `../sibling` are fine.
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../../*'],
+              message: 'Import via the @src/* alias instead of a deep relative path.',
+            },
+          ],
+        },
+      ],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },

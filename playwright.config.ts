@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import { env } from './src/config/env';
+import { env } from '@src/config/env';
 
 /**
  * Two independent projects, one config:

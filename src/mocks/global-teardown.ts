@@ -1,5 +1,5 @@
 import type http from 'node:http';
-import { env } from '../config/env';
+import { env } from '@src/config/env';
 import { stopMockServer } from './salesforce-mock-server';
 
 export default async function globalTeardown(): Promise<void> {

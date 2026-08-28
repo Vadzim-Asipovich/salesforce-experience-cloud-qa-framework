@@ -1,6 +1,6 @@
-import { test, expect } from '../../src/api/fixtures/api-fixtures';
-import { buildAccountInput } from '../../src/utils/test-data';
-import { SalesforceApiError } from '../../src/api/clients/salesforce-rest.client';
+import { test, expect } from '@src/api/fixtures/api-fixtures';
+import { buildAccountInput } from '@src/utils/test-data';
+import { SalesforceApiError } from '@src/api/clients/salesforce-rest.client';
 
 test.describe('Account sobject — CRUD @api', () => {
   test('creates, reads, updates and deletes an Account end to end', async ({

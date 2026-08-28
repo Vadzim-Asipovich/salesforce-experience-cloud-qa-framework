@@ -1,4 +1,4 @@
-import { test, expect } from '../../src/ui/fixtures/ui-fixtures';
+import { test, expect } from '@src/ui/fixtures/ui-fixtures';
 
 // A long-lived, Delivered idea — stable enough to anchor assertions on
 // (unlike vote/point counts, which climb daily and are asserted as

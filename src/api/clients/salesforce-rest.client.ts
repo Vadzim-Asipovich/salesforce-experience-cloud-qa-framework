@@ -1,8 +1,8 @@
 import { type APIRequestContext, type APIResponse } from '@playwright/test';
 import { z } from 'zod';
-import { env, apiBaseUrl } from '../../config/env';
+import { env, apiBaseUrl } from '@src/config/env';
 import { JwtAuthProvider } from '../auth/jwt-auth.provider';
-import { logger } from '../../utils/logger';
+import { logger } from '@src/utils/logger';
 import {
   AccountSchema,
   type Account,

@@ -1,5 +1,5 @@
-import { test, expect } from '../../src/api/fixtures/api-fixtures';
-import { IdeaSchema } from '../../src/api/schemas/idea.schema';
+import { test, expect } from '@src/api/fixtures/api-fixtures';
+import { IdeaSchema } from '@src/api/schemas/idea.schema';
 
 /**
  * Contract test: the `Idea` record served by the API must match both the

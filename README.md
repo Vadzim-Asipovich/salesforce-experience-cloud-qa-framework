@@ -51,6 +51,7 @@ Run the full cross-browser matrix (Chromium/Firefox/WebKit) with `npx playwright
 ```
 src/
   config/env.ts            zod-validated environment config, one source of truth
+  config/environments.ts   named local/qa/staging/prod profiles (TEST_ENV)
   ui/
     pages/                 Page Object Model (HomePage, IdeasListPage, IdeaDetailPage)
     components/            Reusable pieces composed by pages (NavBar, IdeaCard)
@@ -72,12 +73,13 @@ docs/ARCHITECTURE.md        The full design rationale
 
 ## Environment variables
 
-See [.env.example](.env.example) for the full, commented list. The two that matter day to day:
+See [.env.example](.env.example) for the full, commented list.
 
-- `UI_BASE_URL` — defaults to `https://ideas.salesforce.com`. Point it at any other Salesforce Experience Cloud site and the page objects' selectors will need re-verification (see the architecture doc's note on why Lightning markup isn't a versioned contract).
-- `USE_MOCK_SF_API` — `true` (default) runs the API suite against the bundled mock; `false` points `SalesforceRestClient` at a real org via `SF_LOGIN_URL` / `SF_CLIENT_ID` / `SF_USERNAME` / `SF_JWT_PRIVATE_KEY_PATH` (a Connected App configured for JWT Bearer flow). Nothing in `tests/api/` changes either way.
+- `TEST_ENV` — `local` (default) `| qa | staging | prod`. Selects a profile from [src/config/environments.ts](src/config/environments.ts) that sets `UI_BASE_URL`, `SF_LOGIN_URL` and `USE_MOCK_SF_API` in one word: `TEST_ENV=qa npm run test:ui`. `qa`/`staging` carry placeholder domains — point them at a real Experience Cloud site (and a Connected App) to use them.
+- `UI_BASE_URL` — the Salesforce Experience Cloud site under test. Leave unset to take the `TEST_ENV` profile's value; set it to pin a value regardless of profile. Any non-default site's page-object selectors will need re-verification (see the architecture doc on why Lightning markup isn't a versioned contract).
+- `USE_MOCK_SF_API` — `true` runs the API suite against the bundled mock; `false` points `SalesforceRestClient` at a real org via `SF_LOGIN_URL` / `SF_CLIENT_ID` / `SF_USERNAME` / `SF_JWT_PRIVATE_KEY_PATH` (a Connected App configured for JWT Bearer flow). Also profile-driven. Nothing in `tests/api/` changes either way.
 
-`src/config/env.ts` validates all of this with `zod` at process start — a missing or malformed variable fails immediately with a readable message, not a confusing test failure three layers down.
+**Precedence**: an explicit environment variable wins; otherwise the `TEST_ENV` profile's value; otherwise the schema default. `src/config/env.ts` validates all of it with `zod` at process start — a missing or malformed variable fails immediately with a readable message, not a confusing test failure three layers down.
 
 ## CI/CD
 
@@ -88,7 +90,7 @@ Two GitHub Actions workflows:
 
 ## Extending this to a real engagement
 
-This repo is a foundation built to demonstrate architecture, not the finished platform a production Salesforce SaaS needs — [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#what-a-real-engagement-would-add-next) lists the concrete next steps (real-org JWT setup, hybrid data-driven tests, visual regression, multi-environment config, accessibility checks) in the order they'd typically get built.
+This repo is a foundation built to demonstrate architecture, not the finished platform a production Salesforce SaaS needs — [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#what-a-real-engagement-would-add-next) lists the concrete next steps (real-org JWT setup, hybrid data-driven tests, visual regression, accessibility checks) in the order they'd typically get built.
 
 ## License
 

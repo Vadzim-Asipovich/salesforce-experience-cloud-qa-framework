@@ -1,4 +1,4 @@
-import { test, expect } from '../../src/ui/fixtures/ui-fixtures';
+import { test, expect } from '@src/ui/fixtures/ui-fixtures';
 
 test.describe('Home page & global navigation @ui @smoke', () => {
   test('loads the IdeaExchange home page for a guest user', async ({ homePage }) => {
